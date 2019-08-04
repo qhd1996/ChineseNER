@@ -50,26 +50,52 @@ import pandas as pd
 # train_data['entity_org'] = org_list
 # train_data.to_csv('../data/mydata/entity_valid_processed.csv', encoding='utf-8', index=False)
 
-# # sequence labeling
-# train_data = pd.read_csv('../data/mydata/entity_train_processed.csv', encoding='utf-8')
-# train_data = train_data.fillna(' ')
-# for index, row in train_data.iterrows():
-#    person_list = row['entity_person'].split(',')
-#    if person_list != [' ']:
-#       print(person_list)
-#    place_list = row['entity_place'].split(',')
-#    if place_list != [' ']:
-#       print(place_list)
-#    org_list = row['entity_org'].split(',')
-#    if org_list != [' ']:
-#       print(org_list)
-start = [m.start() for m in re.finditer('test', 'test is just test')]
-b = ["o" for i in range(17)]
-for i in start:
-    b[i] = 'start'
-    for index in range(len('test')-1):
-        b[i + index + 1] = 'inside'
-    b[i + len('test')] =
+# sequence labeling
+train_data = pd.read_csv('../data/mydata/entity_train_processed.csv', encoding='utf-8')
+train_data = train_data.fillna(' ')
+valid_data = pd.read_csv('../data/mydata/entity_valid_processed.csv', encoding='utf-8')
+valid_data = valid_data.fillna(' ')
+def sequence_label(data):
+    label_list = []
+    for index, row in data.iterrows():
+       print(index)
+       text = row['text']
+       label = ["O" for i in range(len(text))]
+       person_list = row['entity_person'].split(',')
+       if person_list != [' ']:
+          for person in person_list:
+              start = [m.start() for m in re.finditer(person, text)]
+              for i in start:
+                  label[i] = 'B-PER'
+                  for index in range(len(person) - 1):
+                      label[i + index + 1] = 'I-PER'
+                  label[i + len(person) - 1] = 'E-PER'
+       place_list = row['entity_place'].split(',')
+       if place_list != [' ']:
+           for place in place_list:
+               start = [m.start() for m in re.finditer(place, text)]
+               for i in start:
+                   label[i] = 'B-PL'
+                   for index in range(len(place) - 1):
+                       label[i + index + 1] = 'I-PL'
+                   label[i + len(place) - 1] = 'E-PL'
+       org_list = row['entity_org'].split(',')
+       if org_list != [' ']:
+           for org in org_list:
+               start = [m.start() for m in re.finditer(org, text)]
+               for i in start:
+                   label[i] = 'B-ORG'
+                   for index in range(len(org) - 1):
+                       label[i + index + 1] = 'I-ORG'
+                   label[i + len(org) - 1] = 'E-ORG'
+       label_list.append(label)
+    data['label'] = label_list
+    return data
+
+train_data = sequence_label(train_data)
+train_data.to_csv('../data/mydata/entity_train_labeled.csv', encoding='utf-8')
+valid_data = sequence_label(valid_data)
+valid_data.to_csv('../data/mydata/entity_valid_labeled.csv', encoding='utf-8')
 
 
 
